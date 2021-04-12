@@ -15,7 +15,7 @@ def get_page_data(username, timeframe, page_num, fetch_num, API_KEY):
 
 def condense_data(data):
     print("condense_data")
-    condensed_list = []
+    album_data_list = []
     album_url_list = []
     i = 0
     for album in data:
@@ -23,9 +23,9 @@ def condense_data(data):
         playcount = album["playcount"]
         image_url = album["image"][3]["#text"]
         name = album["name"]
-        condensed_list.append([playcount, image_url, name])
+        album_data_list.append([playcount, name])
         album_url_list.append(image_url)
-    return condensed_list, album_url_list
+    return album_data_list, album_url_list
 
 def request_images(url_list):
     print("request_images")
@@ -36,10 +36,10 @@ def join_data(compiled_data, images):
     print("join_data")
     new_data = []
     for index in range(len(compiled_data)):
-        compiled_data[index][1] = images[index][0]
+        compiled_data[index] += [images[index][0]]
     return compiled_data
 
-def average_colour(image, reference_point_count, boundaries=(0, 299)):
+def average_colour(image, reference_point_count, boundaries=(0, 30)):
     print("average_colour")
     r = []
     g = []
@@ -54,9 +54,9 @@ def average_colour(image, reference_point_count, boundaries=(0, 299)):
         g.append(pixel[1] ^ 2)
         b.append(pixel[2] ^ 2)
 
-    avg_r = (sum(r) / reference_point_count) / 255
-    avg_g = (sum(g) / reference_point_count) / 255
-    avg_b = (sum(b) / reference_point_count) / 255
+    avg_r = (sum(r) / reference_point_count)
+    avg_g = (sum(g) / reference_point_count)
+    avg_b = (sum(b) / reference_point_count)
 
     return avg_r, avg_g, avg_b
 
@@ -81,7 +81,7 @@ def draw_text_on_cover(album_cover, name, playcount):
 
 def move_coordinates(coordinates, canvas_length):
     print("move_coordinates")
-    if coordinates[2] == canvas_length:
+    if coordinates[2] >= canvas_length:
         coordinates = list(coordinates)
         coordinates[0] = 0
         coordinates[1] += 300
@@ -102,7 +102,7 @@ def draw_collage(data, size, total, canvas_length):
 
     for i in range(total):
         album = data[i]
-        album_cover = draw_text_on_cover(album[1], album[2], album[0])
+        album_cover = draw_text_on_cover(album[2], album[1], album[0])
         canvas.paste(album_cover, coordinates)
         coordinates = move_coordinates(coordinates, canvas_length)
     return canvas
@@ -140,5 +140,5 @@ def collage(username, timeframe, API_KEY, size=7):
 if __name__ == "__main__":
     with open("resources/keys.txt", "r") as f:
         LASTFM_KEY = f.readline().split("=")[1].strip("\n")
-    collage = collage("shktv", "overall", LASTFM_KEY, size=30)
+    collage = collage("shktv", "overall", LASTFM_KEY, size=5)
     collage.show()
