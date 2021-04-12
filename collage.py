@@ -32,33 +32,57 @@ def request_images(url_list):
     pool = requestspool.ImageRequestPool(url_list)
     return pool.output
 
-def join_data(compiled_data, images):
+def join_data(compiled_data, images, hue=False):
     print("join_data")
     new_data = []
-    for index in range(len(compiled_data)):
-        compiled_data[index] += [images[index][0]]
+
+    if hue:
+        for index in range(len(compiled_data)):
+            hue_value = average_colour(images[index][0], 10, boundaries=(0, 299), hue=True)
+            compiled_data[index] += [images[index][0], hue_value]
+            # compiled_data[index][2] = Image.new("HSV", (300, 300), (int(hue_value), 100, 100))
+        compiled_data = sorted(compiled_data, key=lambda x: x[3])
+
+    else:
+        for index in range(len(compiled_data)):
+            compiled_data[index] += [images[index][0], None]
     return compiled_data
 
-def average_colour(image, reference_point_count, boundaries=(0, 30)):
+def average_colour(image, reference_point_count, boundaries=(0, 30), hue=False):
     print("average_colour")
     r = []
     g = []
     b = []
+    h = []
     colours = []
-    for i in range(reference_point_count):
-        x = random.randint(boundaries[0], boundaries[1])
-        y = random.randint(boundaries[0], boundaries[1])
 
-        pixel = image.getpixel((x, y))
-        r.append(pixel[0] ^ 2)
-        g.append(pixel[1] ^ 2)
-        b.append(pixel[2] ^ 2)
+    if hue:
+        image = image.convert("HSV")
+        for _ in range(reference_point_count):
+            x = random.randint(boundaries[0], boundaries[1])
+            y = random.randint(boundaries[0], boundaries[1])
 
-    avg_r = (sum(r) / reference_point_count)
-    avg_g = (sum(g) / reference_point_count)
-    avg_b = (sum(b) / reference_point_count)
+            pixel = image.getpixel((x, y))
+            h.append(pixel[0])
 
-    return avg_r, avg_g, avg_b
+        avg_h = (sum(h) / reference_point_count)
+        return avg_h
+
+    else:
+        for _ in range(reference_point_count):
+            x = random.randint(boundaries[0], boundaries[1])
+            y = random.randint(boundaries[0], boundaries[1])
+
+            pixel = image.getpixel((x, y))
+            r.append(pixel[0] ^ 2)
+            g.append(pixel[1] ^ 2)
+            b.append(pixel[2] ^ 2)
+
+        avg_r = (sum(r) / reference_point_count)
+        avg_g = (sum(g) / reference_point_count)
+        avg_b = (sum(b) / reference_point_count)
+
+        return avg_r, avg_g, avg_b
 
 def draw_text_on_cover(album_cover, name, playcount):
     print("draw_text_on_cover")
@@ -107,7 +131,7 @@ def draw_collage(data, size, total, canvas_length):
         coordinates = move_coordinates(coordinates, canvas_length)
     return canvas
 
-def collage(username, timeframe, API_KEY, size=7):
+def collage(username, timeframe, API_KEY, size=7, hue=False):
     compiled_data = []
     compiled_urls = []
     cached_compile_len = -1
@@ -132,7 +156,7 @@ def collage(username, timeframe, API_KEY, size=7):
         count += 1
 
     images = request_images(compiled_urls)
-    final_data = join_data(compiled_data, images)
+    final_data = join_data(compiled_data, images, hue=hue)
 
     collage = draw_collage(final_data, size, total, canvas_length)
     return collage
@@ -140,5 +164,5 @@ def collage(username, timeframe, API_KEY, size=7):
 if __name__ == "__main__":
     with open("resources/keys.txt", "r") as f:
         LASTFM_KEY = f.readline().split("=")[1].strip("\n")
-    collage = collage("shktv", "overall", LASTFM_KEY, size=5)
+    collage = collage("shktv", "overall", LASTFM_KEY, size=30)
     collage.show()
