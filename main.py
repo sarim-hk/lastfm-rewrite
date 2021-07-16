@@ -1,3 +1,4 @@
+from resources import register as last_r
 import format_msg as last_f
 import collage as last_c
 
@@ -21,11 +22,30 @@ async def on_ready():
     print(f"logged in as {bot.user}")
 
 @bot.command()
+async def register(ctx):
+    message_text = last_f.strip_command(PREFIX, ctx.message.content, "register")
+    message_text = last_f.strip_double_spaces(message_text)
+    last_r.register(str(ctx.message.author.id), message_text)
+    await ctx.message.channel.send(f"Registered <@{ctx.message.author.id}> as {message_text}.")
+
+@bot.command()
 async def collage(ctx):
     message_text = last_f.strip_command(PREFIX, ctx.message.content, "collage")
     message_text = last_f.strip_double_spaces(message_text)
     timeframe, message_text = last_f.strip_timeframe(message_text)
     size, username = last_f.get_size_username(message_text)
+
+    print(username)
+    username = username.replace("<@", "")
+    username = username.replace("!", "")
+    username = username.replace(">", "")
+    print(username)
+    if username.isdigit():
+        check = last_r.id_to_username(username)
+        if check:
+            username = check
+    print(username)
+
     username = last_f.validate_username(username, LASTFM_KEY)
     quality = 95
 
@@ -60,10 +80,17 @@ async def collage(ctx):
 
 @bot.command()
 async def colour_collage(ctx):
-    message_text = last_f.strip_command(PREFIX, ctx.message.content, "colour_collage")
+    message_text = last_f.strip_command(PREFIX, ctx.message.content, "collage")
     message_text = last_f.strip_double_spaces(message_text)
     timeframe, message_text = last_f.strip_timeframe(message_text)
     size, username = last_f.get_size_username(message_text)
+
+    username = username.replace("<@", "")
+    username = username.replace("!", "")
+    username = username.replace(">", "")
+    if username.isdigit():
+        username = last_r.id_to_username(username)
+
     username = last_f.validate_username(username, LASTFM_KEY)
     quality = 95
 
